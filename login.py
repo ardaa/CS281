@@ -1,0 +1,45 @@
+import PySimpleGUI as sg
+from signup import sign_up_gui
+def login_gui(db):
+    sg.theme('LightGrey1')   # Add a touch of color
+    # All the stuff inside your window.
+    layout = [  [sg.Image(r'logo50.png'),sg.Text('Welcome to RideLink!')],
+                [sg.Text('Please enter your Email and password')],
+                [sg.Text('Email', size=(15, 1)), sg.InputText(key='email')],
+                [sg.Text('Password', size=(15, 1)), sg.InputText(password_char='*', key='pass')],
+                [sg.Text('')],
+
+                [sg.Button('Login'), sg.Button('Cancel'), sg.Button('Sign Up')] ]
+
+    # Create the Window
+    window = sg.Window('RideLink - Login', layout)
+    
+    # Event Loop to process "events" and get the "values" of the inputs
+    while True:
+        event, values = window.read()
+        window['email'].bind("<Return>", "_Enter")
+        window['pass'].bind("<Return>", "_Enter")
+
+        if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
+            break
+
+        if event == 'Login' or event == '_Enter' or event == 'pass_Enter':
+            if values['email'] == '' or values['pass'] == '':
+                sg.popup('Please fill all the fields')
+                continue
+            acc_type = db.login(values['email'], values['pass'])
+            if acc_type:
+                sg.popup('Login successful')
+                return acc_type
+            else:
+                sg.popup('Login failed')
+                
+        if event == 'Sign Up':
+            sign_up_gui(db)
+            break
+        
+            
+    window.close()
+
+if __name__ == '__main__':
+    login_gui()
