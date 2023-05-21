@@ -1,5 +1,6 @@
 import sqlite3
 import bcrypt
+import time
 # User(UserNumber, Name, Surname, Email_address, Password)
 #    UserNumber TEXT NOT NULL
 #    Password TEXT NOT NULL
@@ -173,8 +174,9 @@ class Database:
         if len(rows) == 0:
             return False
         else:
+            hashed_password = bcrypt.hashpw(rows[0][1].encode('utf8'), bcrypt.gensalt())
             #bcrypt hashed password
-            if bcrypt.checkpw(password.encode('utf8'), rows[0][1]):
+            if bcrypt.checkpw(password.encode('utf8'), hashed_password ):
                 self.__usernumber = rows[0][0]
                 print(self.__usernumber)
                 return self.get_account_type(rows[0][0])
@@ -236,6 +238,12 @@ class Database:
         self.execute(sql, params)
         return True
     
+    def get_driver_avail(self):
+        sql = "SELECT UserNumber, Name, Rates FROM Driver NATURAL JOIN Reviews NATURAL JOIN User WHERE Availability = 1 "
+        params = ()
+        rows = self.fetch(sql,params)
+        return rows
+    
     def get_user_number(self, email):
         sql = "SELECT UserNumber FROM USER WHERE Email = ?"
         params = (email,)
@@ -260,7 +268,23 @@ class Database:
         rows = self.fetch(sql, params)
         return rows
     
+    def create_trip(self, selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address):
+        date = int(time.time())
+        print(date)
+        max_value = self.fetch("SELECT COALESCE(MAX(TripNumber), 0) + 1 FROM Trip",params=())[0][0]
+        print(max_value)       
+        sql = "INSERT INTO Trip (TripNumber,  DateTime,  Status)  VALUES (?, ?, ?)"
+        params = (max_value, date, 'Waiting for approval')
+        self.execute(sql, params)
+        self.conn.commit()
 
+
+    def get_addresses(self):
+        sql = "SELECT AddrNum, Name FROM Addr"
+        params = ()
+        rows = self.fetch(sql, params)
+        return rows
+    
     def assign_password(self, password, email):
         if self.check_admin():
             sql = "UPDATE USER SET Password = ? WHERE Email = ?"
@@ -270,7 +294,7 @@ class Database:
             return True
         else:
             return False
-        
+    
 if __name__ == '__main__':
     db = Database('project.sqlite')
     print(db.assign_password('123456', 'mittromney4@yahoo.com'))
