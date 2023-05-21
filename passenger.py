@@ -41,12 +41,15 @@ def passenger_gui(db):
 
         elif event == "Call a Vehicle":
             page = "create_trip"
+            screen = screenList[0]
             window.close()
             layout = set_layout(page, drivers, cars, addresses, screen)
             window = sg.Window('RideLink - Passenger', layout)
         elif event == "Previous Trips":
             page = "previous_trip"
+            trip = db.get_user_trip(username)
             window.close()
+            print(trip)
             layout = set_layout(page, drivers, cars, addresses, screen, trip)
             window = sg.Window('RideLink - Passenger', layout)
         elif event == 'Select Driver':
@@ -71,7 +74,7 @@ def passenger_gui(db):
 
         elif event == 'Select Car':
             try:    
-                selected_car = values['selectedCar'][0]  # Get the first selected item
+                selected_car = values['selectedCar'][0].split(', ')[0]   # Get the first selected item
                 screen = screenList[screenList.index(screen) + 1]
                 window.close()
                 layout = set_layout(page, drivers, cars, addresses, screen)
