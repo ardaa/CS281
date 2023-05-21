@@ -8,5 +8,5 @@ def splash_screen():
     # Create the Window
     window = sg.Window('RideLink', layout, element_justification='c', finalize=True)
     # Event Loop to process "events" and get the "values" of the inputs
-    event, values = window.read(timeout=1000)
+    event, values = window.read(timeout=100)
     window.close()

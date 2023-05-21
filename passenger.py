@@ -6,10 +6,13 @@ def passenger_gui(db):
     # get the list of cars that belong to the driver
     username = db.get_username()
     drivers = db.get_driver_avail()
+    for i in range(len(drivers)):
+        drivers[i] = ', '.join(list(map(str, drivers[i])))
     cars = []
     car_type = "All"
     addresses = db.get_addresses()
-    trip = db.get_trips(username)
+    trip = db.get_user_trip(username)
+    print(trip)
     page = "main"
     screenList = ["Driver","Car","Payment","Start Address", "Destination Address"]
     screen = screenList[0]
@@ -28,31 +31,42 @@ def passenger_gui(db):
                 window.close()
                 layout = set_layout(page, drivers, cars, addresses, screen)
                 window = sg.Window('RideLink - Passenger', layout)
-            else:
+            elif page=="previous_trip":
+                page ="main"
+                window.close()
+                layout = set_layout(page, drivers, cars, addresses, screen)
+                window = sg.Window('RideLink - Passenger', layout)
+            elif page=="main":
                 break
 
-        elif event == "Create New Trip":
+        elif event == "Call a Vehicle":
             page = "create_trip"
             window.close()
             layout = set_layout(page, drivers, cars, addresses, screen)
             window = sg.Window('RideLink - Passenger', layout)
-
+        elif event == "Previous Trips":
+            page = "previous_trip"
+            window.close()
+            layout = set_layout(page, drivers, cars, addresses, screen, trip)
+            window = sg.Window('RideLink - Passenger', layout)
         elif event == 'Select Driver':
             try:
-                selected_driver = values['selectedDriver'][0][0]  # Get the first selected item
+                selected_driver = values['selectedDriver'][0].split(', ')[0]  # Get the first selected item
                 cars = db.get_cars(selected_driver, car_type)
+                for i in range(len(cars)):
+                    cars[i] = ', '.join(list(map(str, cars[i])))
                 screen = screenList[screenList.index(screen) + 1]
                 window.close()
                 layout = set_layout(page, drivers, cars, addresses, screen)
                 window = sg.Window('RideLink - Passenger', layout)
             except:
-                pass
+                sg.popup("Please select a driver.")
 
-        elif event == 'Cheap' or event=="Normal" or event=="Expensive":
+        elif event == 'Cheap' or event=="Normal" or event=="Expensive" or event=="All":
             car_type = event
             drivers = db.get_driver_avail(car_type)
-            window.close()
             layout = set_layout(page, drivers, cars, addresses, screen)
+            window.close()
             window = sg.Window('RideLink - Passenger', layout)
 
         elif event == 'Select Car':
@@ -63,7 +77,7 @@ def passenger_gui(db):
                 layout = set_layout(page, drivers, cars, addresses, screen)
                 window = sg.Window('RideLink - Passenger', layout)
             except:
-                pass
+                sg.popup("Please select a car.")
 
         elif event == 'Select Payment':
             try:        
@@ -73,7 +87,7 @@ def passenger_gui(db):
                 layout = set_layout(page, drivers, cars, addresses, screen)
                 window = sg.Window('RideLink - Passenger', layout)
             except:
-                pass
+                sg.popup("Please select a payment method.")
             
         elif event == 'Select Start Address':
             try:        
@@ -86,18 +100,20 @@ def passenger_gui(db):
                 layout = set_layout(page, drivers, cars, dest_adresses, screen)
                 window = sg.Window('RideLink - Passenger', layout)
             except:
-                pass
+                sg.popup("Please select a start address.")
 
-        elif event == 'Select Destination Address':
-            try:        
+        elif event == 'Select Destination Address':      
+            try:
                 selected_destination_address = values['selectedDestination'][0]  # Get the first selected item
-                page = "main"
-                db.create_trip(selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address)
-                window.close()
-                layout = set_layout(page, drivers, cars, addresses.remove(selected_destination_address), screen)
-                window = sg.Window('RideLink - Passenger', layout)
-            except: 
-                pass
+            except:
+                sg.popup("Please select a destination address.")
+            page = "main"
+            db.create_trip(selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address)
+            sg.popup("Your trip has been created.")
+            window.close()
+            layout = set_layout(page, drivers, cars, addresses.remove(selected_destination_address), screen)
+            window = sg.Window('RideLink - Passenger', layout)
+           
 
         elif event == "Back":
             screen = screenList[screenList.index(screen) - 1]
@@ -106,12 +122,12 @@ def passenger_gui(db):
             window = sg.Window('RideLink - Passenger', layout)
     window.close()
 
-def set_layout(page, drivers, cars, addresses, screen):
+def set_layout(page, drivers, cars, addresses, screen, trips=None):
     
     if page == "main":
         layout = [  [sg.Image(r'logo50.png')],
-                    [sg.Text("Welcome to RideLink. You can create new trip and show your previous trips.")],
-                    [sg.Button('Create New Trip'),sg.Button('Previous Trips'),sg.Button('Cancel')] ]
+                    [sg.Text("Welcome to RideLink. You can Call a Vehicle and show your previous trips.")],
+                    [sg.Button('Call a Vehicle'),sg.Button('Previous Trips'),sg.Button('Cancel')] ]
     elif page == "create_trip":
         layout = [  [sg.Image(r'logo50.png')],
                     [sg.Text('Please select the driver you want to travel with.')],
@@ -123,6 +139,14 @@ def set_layout(page, drivers, cars, addresses, screen):
                     [sg.Listbox(values=addresses, size=(60, 6), key='selectedStart', visible=(screen=="Start Address"))],
                     [sg.Listbox(values=addresses, size=(60, 6), key='selectedDestination', visible=(screen=="Destination Address"))],
                     [sg.Button("Select {}".format(screen)), sg.Button('Cancel', visible=(screen=="Driver")), sg.Button('Back', visible=(screen!="Driver"))] ]
+    elif page == "previous_trip":
+        layout = [  [sg.Image(r'logo50.png')],
+                    [sg.Text('Here are your previous trips.')],
+                    [sg.Listbox(values=trips, size=(60, 6), key='selectedDriver',visible=(screen=="Driver"))],
+                    [sg.Button('Cancel')] ]
+
+        
+                    
     return layout
 
 def register_car_gui(db):

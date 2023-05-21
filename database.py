@@ -1,6 +1,7 @@
 import sqlite3
 import bcrypt
 import time
+import datetime
 # User(UserNumber, Name, Surname, Email_address, Password)
 #    UserNumber TEXT NOT NULL
 #    Password TEXT NOT NULL
@@ -107,6 +108,7 @@ class Database:
         self.cur = self.conn.cursor()
         self.conn.commit()
         self.__usernumber = None
+        self.__name = None
 
     def fetch(self, sql, params):
         self.cur.execute(sql, params)
@@ -120,6 +122,9 @@ class Database:
     
     def get_username(self):
         return self.__usernumber
+    
+    def get_name(self):
+        return self.__name
 
     def check_admin(self):
         sql = "SELECT UserNumber FROM USER WHERE UserNumber = ?"
@@ -180,13 +185,26 @@ class Database:
         else:
             #hashed_password = bcrypt.hashpw(rows[0][1].encode('utf8'), bcrypt.gensalt())
             #bcrypt hashed password
-            if bcrypt.checkpw(password.encode('utf8'), rows[0][1] ):
-                self.__usernumber = rows[0][0]
-                print(self.__usernumber)
-                return self.get_account_type(rows[0][0])
-            else:
-                return False
-            
+            try:
+                if bcrypt.checkpw(password.encode('utf8'), rows[0][1] ):
+                    self.__usernumber = rows[0][0]
+                    print(self.__usernumber)
+                    return self.get_account_type(rows[0][0])
+                else:
+                    return False
+            except:
+                try:
+                    if bcrypt.checkpw(password.encode('utf8'), rows[0][1].encode('utf8')):
+                        self.__usernumber = rows[0][0]
+                        self.__name = rows[0][4]
+                        print(self.__usernumber)
+
+                        return self.get_account_type(rows[0][0])
+                    else:
+                        return False
+                except:
+                    return False
+
     def get_user_type(self, username=None):
         if username == None:
             username = self.__usernumber
@@ -287,22 +305,66 @@ class Database:
         return rows[0]
     
     def get_trips(self, license_plate):
-        sql = "SELECT * FROM HasTrip WHERE LicensePlate = ?"
+        sql = "SELECT * FROM HasTrip NATURAL JOIN Trip WHERE LicensePlate = ?"
         params = (license_plate,)
         rows = self.fetch(sql, params)
         return rows
     
+    def get_user_trip(self, username=None):
+        if username == None:
+            username = self.__usernumber
+        sql = "SELECT * FROM HasTrip NATURAL JOIN Trip WHERE UserNumber = ?"
+        params = (username,)
+        rows = self.fetch(sql, params)
+        #[(1, '1', '06 ARS 06', 1678639423, 'Delivered'), (5, '1', '16 AVH 3481', 1681663281, 'On the way'), (8, '1', '06 UY 1215', 1682584471, 'Delivered'), (21, '1', '34 ALP 64', 1684692791, 'Waiting for approval')]
+        #change the timestamp to a readable format
+
+        for i in range(len(rows)):
+            rows[i] = rows[i][:3] + (datetime.datetime.fromtimestamp(rows[i][3]).strftime('%Y-%m-%d %H:%M:%S'),) + rows[i][4:]
+            #format everything into a comma separated string
+            rows[i] = ', '.join(map(str, rows[i]))
+
+        return rows
+    
+    def get_driver_trip(self, username=None):
+        if username == None:
+            username = self.__usernumber
+        #get plates of cars owned by driver
+        sql = "SELECT LicensePlate FROM Own WHERE UserNumber = ?"
+        params = (username,)
+        rows = self.fetch(sql, params)
+        #get trips of cars owned by driver
+        trips = []
+        for row in rows:
+            trips += self.get_trips(row[0])
+        #change the timestamp to a readable format
+        for i in range(len(trips)):
+            trips[i] = trips[i][:3] + (datetime.datetime.fromtimestamp(trips[i][3]).strftime('%Y-%m-%d %H:%M:%S'),) + trips[i][4:]
+            #format everything into a comma separated string
+            trips[i] = ', '.join(map(str, trips[i]))
+        return trips
+    
+    
     def create_trip(self, selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address):
         date = int(time.time())
-        print(date)
         max_value = self.fetch("SELECT COALESCE(MAX(TripNumber), 0) + 1 FROM Trip",params=())[0][0]
-        print(max_value)       
         sql = "INSERT INTO Trip (TripNumber,  DateTime,  Status)  VALUES (?, ?, ?)"
         params = (max_value, date, 'Waiting for approval')
         self.execute(sql, params)
         self.conn.commit()
+        sql = "INSERT INTO HasTrip (TripNumber, UserNumber,  LicensePlate)  VALUES (?, ?, ?)"
+        params = (max_value, self.__usernumber, selected_car[0])
+        self.execute(sql, params)
+        self.conn.commit()
+        return True
 
-
+    def update_trip_status(self, trip_number, status):
+        sql = "UPDATE Trip SET Status = ? WHERE TripNumber = ?"
+        params = (status, trip_number)
+        self.execute(sql, params)
+        self.conn.commit()
+        return True
+    
     def get_addresses(self):
         sql = "SELECT AddrNum, Name FROM Addr"
         params = ()

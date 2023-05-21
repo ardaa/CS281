@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 from signup import sign_up_gui
+import re
 def login_gui(db):
     sg.theme('LightGrey1')   # Add a touch of color
     # All the stuff inside your window.
@@ -27,6 +28,9 @@ def login_gui(db):
             if values['email'] == '' or values['pass'] == '':
                 sg.popup('Please fill all the fields')
                 continue
+            if not re.match(r"[^@]+@[^@]+\.[^@]+", values['email']):
+                sg.popup('Please enter a valid email address')
+                continue
             acc_type = db.login(values['email'], values['pass'])
             if acc_type:
                 sg.popup('Login successful')
@@ -34,7 +38,19 @@ def login_gui(db):
                 return acc_type
             else:
                 sg.popup('Login failed')
-                
+        if event == 'TestLogin':
+            acc_type = db.login('admin','123456')
+            if acc_type:
+                sg.popup('Login successful')
+                window.close()
+                return acc_type
+        if event == 'TestDriver':
+            acc_type = db.login('booker55@gmail.com','123456')
+            if acc_type:
+                sg.popup('Login successful')
+                window.close()
+                return acc_type
+            
         if event == 'Sign Up':
             sign_up_gui(db)
             break
