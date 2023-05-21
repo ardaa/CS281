@@ -33,6 +33,8 @@ def passenger_gui(db):
 
         elif event == "Create New Trip":
             page = "create_trip"
+            screen = screenList[0]
+            car_type = "All"
             window.close()
             layout = set_layout(page, drivers, cars, addresses, screen)
             window = sg.Window('RideLink - Passenger', layout)
@@ -48,7 +50,7 @@ def passenger_gui(db):
             except:
                 pass
 
-        elif event == 'Cheap' or event=="Normal" or event=="Expensive":
+        elif event == 'Cheap' or event=="Normal" or event=="Expensive" or event == "All":
             car_type = event
             drivers = db.get_driver_avail(car_type)
             window.close()
@@ -92,7 +94,7 @@ def passenger_gui(db):
             try:        
                 selected_destination_address = values['selectedDestination'][0]  # Get the first selected item
                 page = "main"
-                db.create_trip(selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address)
+                db.create_trip(username, selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address)
                 window.close()
                 layout = set_layout(page, drivers, cars, addresses.remove(selected_destination_address), screen)
                 window = sg.Window('RideLink - Passenger', layout)

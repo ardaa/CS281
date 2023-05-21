@@ -1,6 +1,8 @@
 import sqlite3
 import bcrypt
 import time
+import asyncio
+
 # User(UserNumber, Name, Surname, Email_address, Password)
 #    UserNumber TEXT NOT NULL
 #    Password TEXT NOT NULL
@@ -276,16 +278,21 @@ class Database:
         rows = self.fetch(sql, params)
         return rows
     
-    def create_trip(self, selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address):
-        date = int(time.time())
-        print(date)
-        max_value = self.fetch("SELECT COALESCE(MAX(TripNumber), 0) + 1 FROM Trip",params=())[0][0]
-        print(max_value)       
-        sql = "INSERT INTO Trip (TripNumber,  DateTime,  Status)  VALUES (?, ?, ?)"
-        params = (max_value, date, 'Waiting for approval')
-        self.execute(sql, params)
-        self.conn.commit()
-
+    def create_trip(self, username, selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address):
+            date = time.time()
+            max_value = self.fetch("SELECT COALESCE(MAX(TripNumber), 0) + 1 FROM Trip",params=())[0][0]
+            maxPayment = self.fetch("SELECT COALESCE(MAX(TransactionNumber), 0) + 1 FROM Payment",params=())[0][0]
+            print(max_value)
+            sql = "INSERT INTO Trip (TripNumber,  DateTime,  Status)  VALUES (?, ?, ?)"
+            params = (max_value, date, 'Waiting for approval')
+            self.execute(sql, params)
+            sql = "INSERT INTO HasTrip (TripNumber,  UserNumber,  LicensePlate)  VALUES (?, ?, ?)"
+            params = (max_value, username, selected_car[0])
+            self.execute(sql, params)
+            sql = "INSERT INTO HasAddr (TripNumber,  StartAddrNum,  DestAddrNum)  VALUES (?, ?, ?)"
+            params = (max_value, selected_start_address[0], selected_destination_address[0])
+            self.execute(sql, params)
+            self.conn.commit()
 
     def get_addresses(self):
         sql = "SELECT AddrNum, Name FROM Addr"
