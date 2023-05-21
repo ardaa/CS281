@@ -238,9 +238,13 @@ class Database:
         self.execute(sql, params)
         return True
     
-    def get_driver_avail(self):
-        sql = "SELECT UserNumber, Name, Rates FROM Driver NATURAL JOIN Reviews NATURAL JOIN User WHERE Availability = 1 "
+    def get_driver_avail(self, car_type = "All"):
         params = ()
+        if car_type=="All":
+            sql = "SELECT  UserNumber,  Name, avg(Rates) FROM Driver NATURAL JOIN Reviews NATURAL JOIN User NATURAL JOIN Own NATURAL JOIN Vehicle WHERE Availability = 1  GROUP BY UserNumber"
+        else:
+            sql = "SELECT  UserNumber,  Name, avg(Rates) FROM Driver NATURAL JOIN Reviews NATURAL JOIN User NATURAL JOIN Own NATURAL JOIN Vehicle WHERE Availability = 1 and Type = ? GROUP BY UserNumber"
+            params = (car_type,)
         rows = self.fetch(sql,params)
         return rows
     
@@ -250,9 +254,13 @@ class Database:
         rows = self.fetch(sql, params)
         return rows[0][0]
     
-    def get_cars(self, username):
-        sql = "SELECT * FROM Own WHERE UserNumber = ?"
-        params = (username,)
+    def get_cars(self, username, car_type = "All"):
+        if car_type=="All":
+            sql = "SELECT * FROM Own NATURAL JOIN Vehicle WHERE UserNumber = ?"
+            params = (username,)
+        else:
+            sql = "SELECT * FROM Own NATURAL JOIN Vehicle WHERE UserNumber = ? and Type = ?"
+            params = (username, car_type,)
         rows = self.fetch(sql, params)
         return rows
 
