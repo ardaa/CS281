@@ -257,9 +257,9 @@ class Database:
     def get_driver_avail(self, car_type = "All"):
         params = ()
         if car_type=="All":
-            sql = "SELECT  UserNumber,  Name, avg(Rates) FROM Driver NATURAL JOIN Reviews NATURAL JOIN User NATURAL JOIN Own NATURAL JOIN Vehicle WHERE Availability = 1  GROUP BY UserNumber"
+            sql = "SELECT Own.UserNumber, Name, avg(Rates)  FROM Driver NATURAL JOIN USER NATURAL JOIN Own INNER JOIN HasTrip on hasTrip.LicensePlate=Own.LicensePlate INNER JOIN HasRev on HasRev.TripNumber=HasTrip.TripNumber NATURAL JOIN Reviews WHERE Driver.Availability = 1 GROUP BY Own.UserNumber"
         else:
-            sql = "SELECT  UserNumber,  Name, avg(Rates) FROM Driver NATURAL JOIN Reviews NATURAL JOIN User NATURAL JOIN Own NATURAL JOIN Vehicle WHERE Availability = 1 and Type = ? GROUP BY UserNumber"
+            sql = "SELECT Own.UserNumber, Name, avg(Rates)  FROM Driver NATURAL JOIN USER NATURAL JOIN Own INNER JOIN HasTrip on hasTrip.LicensePlate=Own.LicensePlate NATURAL JOIN Vehicle INNER JOIN HasRev on HasRev.TripNumber=HasTrip.TripNumber NATURAL JOIN Reviews WHERE Driver.Availability = 1 and Vehicle.Type=? GROUP BY Own.UserNumber"
             params = (car_type,)
         rows = self.fetch(sql,params)
         return rows
