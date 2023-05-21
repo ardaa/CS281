@@ -6,7 +6,7 @@ def driver_gui(db):
     # get the list of cars that belong to the driver
     username = db.get_username()
     print(username)
-    name = db.get_name(username)
+
     user_data = db.get_driver_info(username)
     print(user_data)
     cars = db.get_cars(username)
@@ -15,18 +15,18 @@ def driver_gui(db):
     print(trip)
     if cars == []:
         layout = [  [sg.Image(r'logo50.png')],
-                    [sg.Text('Hey '+name+'! You have no cars registered yet!')],
+                    [sg.Text('Hey! You have no cars registered yet!')],
                     [sg.Button('Register a car'), sg.Button('Cancel')] ]
     elif user_data[-3] == 0:
         layout = [  [sg.Image(r'logo50.png')],
-                    [sg.Text('Hey '+name+'! You seem to be not available to drive. Please select the car you want to use and start on accepting trips.')],
+                    [sg.Text('Hey! You seem to be not available to drive. Please select the car you want to use and start on accepting trips.')],
                     [sg.Text('Select a car')],
                     [sg.Listbox(values=cars, size=(60, 6), key='car')],
                     [sg.Button('Start'), sg.Button('Cancel')] ]
         
     elif trip == []:
         layout = [[sg.Image(r'logo50.png')],
-                    [sg.Text('Hey!'+name+'! You have no trips registered yet! Wait for a passenger to request a trip. Your trips will appear here.')]]
+                    [sg.Text('Hey! You have no trips registered yet! Wait for a passenger to request a trip. Your trips will appear here.')]]
     else:
         layout = [[sg.Image(r'logo50.png')],
                     [sg.Text('Hey! Here is your trip information.')],
