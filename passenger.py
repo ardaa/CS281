@@ -5,13 +5,10 @@ def passenger_gui(db):
     # All the stuff inside your window.
     # get the list of cars that belong to the driver
     username = db.get_username()
-    print(username)
-
     drivers = db.get_driver_avail()
-    print(drivers)
     cars = []
+    car_type = "All"
     addresses = db.get_addresses()
-    print(addresses)
     trip = db.get_trips(username)
     page = "main"
     screenList = ["Driver","Car","Payment","Start Address", "Destination Address"]
@@ -43,13 +40,20 @@ def passenger_gui(db):
         elif event == 'Select Driver':
             try:
                 selected_driver = values['selectedDriver'][0][0]  # Get the first selected item
-                cars = db.get_cars(selected_driver)
+                cars = db.get_cars(selected_driver, car_type)
                 screen = screenList[screenList.index(screen) + 1]
                 window.close()
                 layout = set_layout(page, drivers, cars, addresses, screen)
                 window = sg.Window('RideLink - Passenger', layout)
             except:
                 pass
+
+        elif event == 'Cheap' or event=="Normal" or event=="Expensive":
+            car_type = event
+            drivers = db.get_driver_avail(car_type)
+            window.close()
+            layout = set_layout(page, drivers, cars, addresses, screen)
+            window = sg.Window('RideLink - Passenger', layout)
 
         elif event == 'Select Car':
             try:    
@@ -112,6 +116,7 @@ def set_layout(page, drivers, cars, addresses, screen):
         layout = [  [sg.Image(r'logo50.png')],
                     [sg.Text('Please select the driver you want to travel with.')],
                     [sg.Text('Select a driver')],
+                    [sg.Button('All',visible=(screen=="Driver")),sg.Button('Cheap',visible=(screen=="Driver")),sg.Button('Normal',visible=(screen=="Driver")),sg.Button('Expensive',visible=(screen=="Driver"))],
                     [sg.Listbox(values=drivers, size=(60, 6), key='selectedDriver',visible=(screen=="Driver"))],
                     [sg.Listbox(values=["Card","Cash"], size=(60, 6), key='selectedPayment', visible=(screen=="Payment"))],
                     [sg.Listbox(values=cars, size=(60, 6), key='selectedCar', visible=(screen=="Car"))],
