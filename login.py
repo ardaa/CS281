@@ -30,6 +30,7 @@ def login_gui(db):
             acc_type = db.login(values['email'], values['pass'])
             if acc_type:
                 sg.popup('Login successful')
+                window.close()
                 return acc_type
             else:
                 sg.popup('Login failed')

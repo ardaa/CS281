@@ -2,7 +2,7 @@ import login
 import signup
 import splash
 from driver import driver_gui
-#from passenger import passenger_gui
+from passenger import passenger_gui
 
 import PySimpleGUI as sg
 from database import Database

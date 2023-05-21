@@ -5,6 +5,8 @@ def driver_gui(db):
     # All the stuff inside your window.
     # get the list of cars that belong to the driver
     username = db.get_username()
+    print(username)
+
     user_data = db.get_driver_info(username)
     print(user_data)
     cars = db.get_cars(username)
@@ -14,7 +16,7 @@ def driver_gui(db):
         layout = [  [sg.Image(r'logo50.png')],
                     [sg.Text('Hey! You have no cars registered yet!')],
                     [sg.Button('Register a car'), sg.Button('Cancel')] ]
-    elif user_data[-1] == False:
+    elif user_data[-3] == 0:
         layout = [  [sg.Image(r'logo50.png')],
                     [sg.Text('Hey! You seem to be not available to drive. Please select the car you want to use and start on accepting trips.')],
                     [sg.Text('Select a car')],
