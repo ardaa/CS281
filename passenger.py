@@ -111,6 +111,7 @@ def passenger_gui(db):
             except:
                 sg.popup("Please select a destination address.")
             page = "main"
+            screen = screenList[0]
             db.create_trip(selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address)
             sg.popup("Your trip has been created.")
             window.close()
