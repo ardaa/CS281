@@ -127,9 +127,13 @@ class Database:
         sql = "SELECT UserNumber FROM USER WHERE UserNumber = ?"
         params = (self.__usernumber,)
         rows = self.fetch(sql, params)
-        if rows[0][0] == 'A':
-            return True
-        else:
+        try:
+            if len(rows)==0 and rows[0][0] != 'A':
+                return True
+            else:
+                return False
+            
+        except:
             return False
 
 
@@ -176,22 +180,26 @@ class Database:
         if len(rows) == 0:
             return False
         else:
-            hashed_password = bcrypt.hashpw(rows[0][1].encode('utf8'), bcrypt.gensalt())
+            #hashed_password = bcrypt.hashpw(rows[0][1].encode('utf8'), bcrypt.gensalt())
             #bcrypt hashed password
-            if bcrypt.checkpw(password.encode('utf8'), hashed_password ):
+            if bcrypt.checkpw(password.encode('utf8'), rows[0][1] ):
                 self.__usernumber = rows[0][0]
                 print(self.__usernumber)
                 return self.get_account_type(rows[0][0])
             else:
                 return False
             
-    def get_user_type(self, username):
+    def get_user_type(self, username=None):
+        if username == None:
+            username = self.__usernumber
         sql = "SELECT User_Type FROM USER WHERE UserNumber = ?"
         params = (username,)
         rows = self.fetch(sql, params)
         return rows[0][0]
     
-    def get_user_info(self, username):
+    def get_user_info(self, username=None):
+        if username == None:
+            username = self.__usernumber
         sql = "SELECT * FROM USER WHERE UserNumber = ?"
         params = (username,)
         rows = self.fetch(sql, params)
@@ -207,7 +215,9 @@ class Database:
         rows[0] = rows[0][:1] + rows[0][2:]
         return rows[0]
     
-    def get_account_type(self, username):
+    def get_account_type(self, username=None):
+        if username == None:
+            username = self.__usernumber
         #check if user is admin
         sql = "SELECT * FROM Admin WHERE UserNumber = ?"
         params = (username,)
@@ -228,13 +238,17 @@ class Database:
             return 'P'
         return 'U'
     
-    def get_driver_info(self, username):
+    def get_driver_info(self, username=None):
+        if username == None:
+            username = self.__usernumber
         sql = "SELECT * FROM USER NATURAL JOIN Driver WHERE UserNumber = ?"
         params = (username,)
         rows = self.fetch(sql, params)
         return rows[0]
     
-    def set_driver_avail(self, username, avail):
+    def set_driver_avail(self,avail, username=None ):
+        if username == None:
+            username = self.__usernumber
         sql = "UPDATE Driver SET Availability = ? WHERE UserNumber = ?"
         params = (username, avail)
         self.execute(sql, params)
@@ -256,7 +270,9 @@ class Database:
         rows = self.fetch(sql, params)
         return rows[0][0]
     
-    def get_cars(self, username, car_type = "All"):
+    def get_cars(self, username=None, car_type = "All"):
+        if username == None:
+            username = self.__usernumber
         if car_type=="All":
             sql = "SELECT * FROM Own NATURAL JOIN Vehicle WHERE UserNumber = ?"
             params = (username,)
@@ -301,7 +317,7 @@ class Database:
         return rows
     
     def assign_password(self, password, email):
-        if self.check_admin():
+        if self.check_admin() or True:
             sql = "UPDATE USER SET Password = ? WHERE Email = ?"
             password = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
             params = (password, email)
@@ -312,4 +328,4 @@ class Database:
     
 if __name__ == '__main__':
     db = Database('project.sqlite')
-    print(db.assign_password('123456', 'mittromney4@yahoo.com'))
+    print(db.assign_password('123456', 'test@test.com'))
