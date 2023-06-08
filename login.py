@@ -22,7 +22,7 @@ def login_gui(db):
         window['pass'].bind("<Return>", "_Enter")
 
         if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
-            break
+            return None
 
         if event == 'Login' or event == '_Enter' or event == 'pass_Enter':
             if values['email'] == '' or values['pass'] == '':
@@ -53,7 +53,6 @@ def login_gui(db):
             
         if event == 'Sign Up':
             sign_up_gui(db)
-            break
         
             
     window.close()

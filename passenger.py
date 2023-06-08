@@ -110,6 +110,7 @@ def passenger_gui(db):
                 selected_destination_address = values['selectedDestination'][0]  # Get the first selected item
             except:
                 sg.popup("Please select a destination address.")
+                continue
             page = "main"
             screen = screenList[0]
             db.create_trip(selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address)

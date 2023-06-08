@@ -344,7 +344,22 @@ class Database:
             trips[i] = ', '.join(map(str, trips[i]))
         return trips
     
+    def add_adress(self, x_cor, y_cor, name):
+        max_value = self.fetch("SELECT COALESCE(MAX(AddrNum), 0) + 1 FROM Addr",params=())[0][0]
+        sql = "INSERT INTO Addr (AddrNum,  YCoordinate,  XCoordinate, Name)  VALUES (?, ?, ?, ?)"
+        params = (max_value ,y_cor, x_cor, name)
+        print(params)
+        self.execute(sql, params)
+        self.conn.commit()
+        return True  
     
+    def update_driver_availability(self, username, availability):
+        sql = "UPDATE Driver SET Availability = ? WHERE UserNumber = ?"
+        params = (availability, username)
+        self.execute(sql, params)
+        self.conn.commit()
+        return True
+
     def create_trip(self, selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address):
         date = int(time.time())
         max_value = self.fetch("SELECT COALESCE(MAX(TripNumber), 0) + 1 FROM Trip",params=())[0][0]
