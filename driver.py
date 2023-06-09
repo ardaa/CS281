@@ -63,7 +63,6 @@ def driver_gui(db):
                 continue
             db.update_trip_status(selected_trip[0], values['status'])
             sg.popup('Status changed!')
-            driver_gui(db)
             break
         elif event == 'Set Availability':
             if values['availability'] == user_data[-3]:

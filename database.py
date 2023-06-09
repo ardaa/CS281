@@ -2,6 +2,7 @@ import sqlite3
 import bcrypt
 import time
 import datetime
+import math
 # User(UserNumber, Name, Surname, Email_address, Password)
 #    UserNumber TEXT NOT NULL
 #    Password TEXT NOT NULL
@@ -318,9 +319,20 @@ class Database:
         rows = self.fetch(sql, params)
         #[(1, '1', '06 ARS 06', 1678639423, 'Delivered'), (5, '1', '16 AVH 3481', 1681663281, 'On the way'), (8, '1', '06 UY 1215', 1682584471, 'Delivered'), (21, '1', '34 ALP 64', 1684692791, 'Waiting for approval')]
         #change the timestamp to a readable format
-
         for i in range(len(rows)):
-            rows[i] = rows[i][:3] + (datetime.datetime.fromtimestamp(rows[i][3]).strftime('%Y-%m-%d %H:%M:%S'),) + rows[i][4:]
+            trip_number = rows[i][0]
+            try:
+                sql = "SELECT Cost FROM Payment NATURAL JOIN HasPayment WHERE TripNumber = ?"
+                params = (trip_number,)
+                cost_row = self.fetch(sql, params)
+                cost = cost_row[0][0]
+                if float(cost) == 0:
+                    transaction = "Cost is not paid"
+                else:
+                    transaction = cost
+            except:
+                None
+            rows[i] = rows[i][:3] + (datetime.datetime.fromtimestamp(rows[i][3]).strftime('%Y-%m-%d %H:%M:%S'),) + rows[i][4:] + (transaction,)
             #format everything into a comma separated string
             rows[i] = ', '.join(map(str, rows[i]))
 
@@ -371,6 +383,20 @@ class Database:
         params = (max_value, self.__usernumber, selected_car)
         self.execute(sql, params)
         self.conn.commit()
+        sql = "INSERT INTO Payment (TransactionNumber, Cost, PaymentMethod)  VALUES (?, ?, ?)"
+        max_tramsaction = self.fetch("SELECT COALESCE(MAX(TransactionNumber), 0) + 1 FROM Payment",params=())[0][0]
+        params = (max_tramsaction, 0, selected_payment[0])
+        print(params)
+        self.execute(sql, params)
+        self.conn.commit()
+        sql = "INSERT INTO HasPayment (TripNumber,TransactionNumber)  VALUES (?, ?)"
+        params = (max_value, max_tramsaction)
+        self.execute(sql, params)
+        self.conn.commit()
+        sql = "INSERT INTO HasAddr (TripNumber, StartAddrNum, DestAddrNum)  VALUES (?, ?, ?)"
+        params = (max_value, selected_start_address[0], selected_destination_address[0])
+        self.execute(sql, params)
+        self.conn.commit()
         return True
 
     def update_trip_status(self, trip_number, status):
@@ -378,6 +404,42 @@ class Database:
         params = (status, trip_number)
         self.execute(sql, params)
         self.conn.commit()
+        if status == "Delivered":
+            sql = "SELECT StartAddrNum, DestAddrNum FROM HasAddr WHERE TripNumber = ?"
+            params = (int(trip_number),)
+            rows = self.fetch(sql, params)
+            print(rows)
+            start_addr, dest_addr = rows[0][0],rows[0][1]
+            sql = "SELECT YCoordinate, XCoordinate FROM Addr WHERE AddrNum = ?"
+            params = (start_addr,)
+            rows = self.fetch(sql, params)
+            YStart, XStart = rows[0][0], rows[0][1]
+            params = (dest_addr,)
+            rows = self.fetch(sql, params)
+            YDest, XDest = rows[0][0], rows[0][1]   
+            cost = round(1000*math.sqrt((float(YDest)-float(YStart))**2 + (int(XDest)-int(XStart))**2),2)
+            print("cost",YDest,XDest,YStart,XStart,cost)
+            sql = "SELECT TransactionNumber FROM HasPayment WHERE TripNumber = ?"
+            params = (trip_number,)
+            transactionNumber = self.fetch(sql, params)   
+            sql = "UPDATE Payment SET Cost = ? WHERE TransactionNumber = ?"
+            params = (cost, transactionNumber[0][0])
+            print(params)
+            self.execute(sql, params)   
+            self.conn.commit()
+        elif status == "Cancelled":
+            sql = "SELECT TransactionNumber FROM HasPayment WHERE TripNumber = ?"
+            params = (trip_number,)
+            transactionNumber = self.fetch(sql, params)   
+            sql = "DELETE FROM Payment WHERE TransactionNumber = ?"
+            params = (transactionNumber[0][0],)
+            self.execute(sql, params)   
+            self.conn.commit()
+            sql = "DELETE FROM Payment WHERE TransactionNumber = ?"
+            self.execute(sql, params)   
+            sql = "DELETE FROM HasPayment WHERE TransactionNumber = ?"
+            self.execute(sql, params)  
+            self.conn.commit()
         return True
     
     def get_addresses(self):

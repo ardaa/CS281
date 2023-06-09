@@ -54,7 +54,10 @@ def passenger_gui(db):
             window = sg.Window('RideLink - Passenger', layout)
         elif event == 'Select Driver':
             try:
-                selected_driver = values['selectedDriver'][0].split(', ')[0]  # Get the first selected item
+                try:   
+                    selected_driver = values['selectedDriver'][0].split(', ')[0]  # Get the first selected item
+                except:
+                    selected_driver = values['selectedDriver'][0][0]
                 cars = db.get_cars(selected_driver, car_type)
                 for i in range(len(cars)):
                     cars[i] = ', '.join(list(map(str, cars[i])))
