@@ -54,6 +54,7 @@ def admin_gui(db):
                 continue
             db.add_adress(x_cor, y_cor, name)
             page = "main"
+            window.close()
             sg.popup("New adress has been added.")
             layout = set_layout(page, addresses)
             window = sg.Window('RideLink - Admin', layout)
