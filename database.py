@@ -274,9 +274,9 @@ class Database:
     def get_driver_avail(self, car_type = "All"):
         params = ()
         if car_type=="All":
-            sql = "SELECT Own.UserNumber, Name, avg(Rates)  FROM Driver NATURAL JOIN USER NATURAL JOIN Own INNER JOIN HasTrip on hasTrip.LicensePlate=Own.LicensePlate INNER JOIN HasRev on HasRev.TripNumber=HasTrip.TripNumber NATURAL JOIN Reviews WHERE Driver.Availability = 1 GROUP BY Own.UserNumber"
+            sql = "SELECT Own.UserNumber, Name, avg(Rates) FROM Driver NATURAL JOIN USER NATURAL JOIN Own INNER JOIN HasTrip on hasTrip.LicensePlate=Own.LicensePlate LEFT JOIN HasRev on HasRev.TripNumber=HasTrip.TripNumber LEFT JOIN Reviews on HasRev.Reviewld=Reviews.Reviewld WHERE Driver.Availability = 1 GROUP BY  Own.UserNumber"
         else:
-            sql = "SELECT Own.UserNumber, Name, avg(Rates)  FROM Driver NATURAL JOIN USER NATURAL JOIN Own INNER JOIN HasTrip on hasTrip.LicensePlate=Own.LicensePlate NATURAL JOIN Vehicle INNER JOIN HasRev on HasRev.TripNumber=HasTrip.TripNumber NATURAL JOIN Reviews WHERE Driver.Availability = 1 and Vehicle.Type=? GROUP BY Own.UserNumber"
+            sql = "SELECT Own.UserNumber, Name, avg(Rates)  FROM Driver NATURAL JOIN USER NATURAL JOIN Own INNER JOIN HasTrip on hasTrip.LicensePlate=Own.LicensePlate NATURAL JOIN Vehicle LEFT JOIN HasRev on HasRev.TripNumber=HasTrip.TripNumber LEFT JOIN Reviews on HasRev.Reviewld=Reviews.Reviewld WHERE Driver.Availability = 1 and Vehicle.Type=? GROUP BY Own.UserNumber"
             params = (car_type,)
         rows = self.fetch(sql,params)
         return rows
@@ -371,6 +371,53 @@ class Database:
         self.execute(sql, params)
         self.conn.commit()
         return True
+
+    def add_trip_review(self, trip_number, rank, comment):
+        max_value = self.fetch("SELECT COALESCE(MAX(Reviewld), 0) + 1 FROM Reviews",params=())[0][0]
+        sql = "INSERT INTO Reviews (Reviewld,  Rates,  Comments)  VALUES (?, ?, ?)"
+        params = (max_value, rank, comment)
+        self.execute(sql, params)
+        self.conn.commit()
+        sql = "INSERT INTO HasRev (Reviewld,  TripNumber)  VALUES (?, ?)"
+        params = (max_value, trip_number)
+        self.execute(sql, params)
+        self.conn.commit()
+        return True
+
+    def delete_trip_review(self, review_id):
+        sql = "DELETE FROM Reviews WHERE Reviewld = ?"
+        params = (review_id,)
+        self.execute(sql, params)
+        self.conn.commit()
+        sql = "DELETE FROM HasRev WHERE Reviewld = ?"
+        params = (review_id,)
+        self.execute(sql, params)
+        self.conn.commit()
+        return True
+
+    def get_all_trips_and_ranks(self):
+        sql = "SELECT * FROM HasTrip NATURAL JOIN Trip LEFT JOIN HasRev ON HasTrip.TripNumber = HasRev.TripNumber LEFT JOIN Reviews ON HasRev.Reviewld = Reviews.Reviewld"
+        params = ()
+        rows = self.fetch(sql, params)
+        #[(1, '1', '06 ARS 06', 1678639423, 'Delivered'), (5, '1', '16 AVH 3481', 1681663281, 'On the way'), (8, '1', '06 UY 1215', 1682584471, 'Delivered'), (21, '1', '34 ALP 64', 1684692791, 'Waiting for approval')]
+        #change the timestamp to a readable format
+        for i in range(len(rows)):
+            trip_number = rows[i][0]
+            try:
+                sql = "SELECT Cost FROM Payment NATURAL JOIN HasPayment WHERE TripNumber = ?"
+                params = (trip_number,)
+                cost_row = self.fetch(sql, params)
+                cost = cost_row[0][0]
+                if float(cost) == 0:
+                    transaction = "Cost is not paid"
+                else:
+                    transaction = cost
+            except:
+                None
+            rows[i] = rows[i][:3] + (datetime.datetime.fromtimestamp(rows[i][3]).strftime('%Y-%m-%d %H:%M:%S'),) + rows[i][4:5] + (transaction,) + rows[i][7:]
+            #format everything into a comma separated string
+            rows[i] = ', '.join(map(str, rows[i]))
+        return rows
 
     def create_trip(self, selected_driver, selected_car, selected_payment, selected_start_address, selected_destination_address):
         date = int(time.time())

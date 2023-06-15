@@ -128,6 +128,30 @@ def passenger_gui(db):
             window.close()
             layout = set_layout(page, drivers, cars, addresses, screen)
             window = sg.Window('RideLink - Passenger', layout)
+        
+        elif event == "Add Review":
+            selected_item = values['selectedTrip'][0] if values['selectedTrip'] else None
+            trip_id = selected_item.split(', ')[0]
+            trip_rank = sg.popup_get_text("Please enter a rank between 1 and 5.")
+            try:
+                if trip_rank.isdigit() and int(trip_rank) in range(1,6):
+                    trip_rank = int(trip_rank)
+                else:
+                    sg.popup("Please enter a valid rank.")
+            except:
+                continue
+            trip_comment = sg.popup_get_text("Please enter a comment.")
+            if trip_comment:
+                db.add_trip_review(trip_id, trip_rank, trip_comment)
+                sg.popup("Your review has been added.")
+        try:
+            if page == "previous_trip":
+                selected_item = values['selectedTrip'][0] if values['selectedTrip'] else None
+                status = selected_item.split(', ')[-2]
+                window['Add Review'].update(disabled=(status!="Delivered"))
+        except:
+            pass
+
     window.close()
 
 def set_layout(page, drivers, cars, addresses, screen, trips=None):
@@ -150,8 +174,8 @@ def set_layout(page, drivers, cars, addresses, screen, trips=None):
     elif page == "previous_trip":
         layout = [  [sg.Image(r'logo50.png')],
                     [sg.Text('Here are your previous trips.')],
-                    [sg.Listbox(values=trips, size=(60, 6), key='selectedDriver',visible=(screen=="Driver"))],
-                    [sg.Button('Cancel')] ]
+                    [sg.Listbox(values=trips, size=(60, 6), key='selectedTrip', enable_events=True)],
+                    [sg.Button('Cancel'), sg.Button('Add Review', disabled_button_color="grey", disabled = True)] ]
 
         
                     

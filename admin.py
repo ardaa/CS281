@@ -22,7 +22,7 @@ def admin_gui(db):
                 window.close()
                 layout = set_layout(page, addresses)
                 window = sg.Window('RideLink - Admin', layout)
-            elif page=="trip":
+            elif page=="previous_trip":
                 page ="main"
                 window.close()
                 layout = set_layout(page, addresses)
@@ -35,13 +35,14 @@ def admin_gui(db):
             window.close()
             layout = set_layout(page, addresses)
             window = sg.Window('RideLink - Admin', layout)
+
         elif event == "Previous Trips":
-            page = "trip"
-            trip = db.get_user_trip(username)
+            page = "previous_trip"
+            trip = db.get_all_trips_and_ranks()
             window.close()
-            print(trip)
             layout = set_layout(page, addresses, trip)
             window = sg.Window('RideLink - Admin', layout)
+
         elif event == 'Add adress':
             new_adress = values['adress']
             try:
@@ -51,12 +52,28 @@ def admin_gui(db):
             except:
                 sg.popup("Please enter the adress as comma seperated list of X coordinate, Y coordinate, Adress name. Example: 38.87, -78.32, Home")
                 continue
-            
             db.add_adress(x_cor, y_cor, name)
             page = "main"
             sg.popup("New adress has been added.")
             layout = set_layout(page, addresses)
             window = sg.Window('RideLink - Admin', layout)
+
+        elif event == 'Delete Review':
+            selected_item = values['selectedTrip'][0] if values['selectedTrip'] else None
+            review_id = selected_item.split(', ')[-3]
+            db.delete_trip_review(review_id)
+            sg.popup("Trip has been deleted.")
+            trip = db.get_all_trips_and_ranks()
+            window["selectedTrip"].update(values=trip)
+
+        try:
+            if page == "previous_trip":
+                selected_item = values['selectedTrip'][0] if values['selectedTrip'] else None
+                status = selected_item.split(', ')[-1]
+                print(status)
+                window['Delete Review'].update(disabled=(status == "None"))
+        except:
+            pass
 
 
     window.close()
@@ -76,8 +93,8 @@ def set_layout(page, addresses, trips=None):
     elif page == "previous_trip":
         layout = [  [sg.Image(r'logo50.png')],
                     [sg.Text('Here are your previous trips.')],
-                    [sg.Listbox(values=trips, size=(60, 6), key='selectedDriver',visible=(screen=="Driver"))],
-                    [sg.Button('Cancel')] ]
+                    [sg.Listbox(values=trips, size=(60, 6), key='selectedTrip', enable_events=True)],
+                    [sg.Button('Delete Review', disabled_button_color="grey", disabled = True), sg.Button('Cancel')] ]
 
         
                     

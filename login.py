@@ -10,7 +10,7 @@ def login_gui(db):
                 [sg.Text('Password', size=(15, 1)), sg.InputText(password_char='*', key='pass')],
                 [sg.Text('')],
 
-                [sg.Button('Login'), sg.Button('Cancel'), sg.Button('Sign Up')] ]
+                [sg.Button('Login'), sg.Button('Sign Up'), sg.Button('Cancel')] ]
 
     # Create the Window
     window = sg.Window('RideLink - Login', layout)
